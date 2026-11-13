@@ -65,10 +65,30 @@ Valores del periodo de facturación actual (desde 2026-11-13T02:25Z), leídos co
 | `compute_time_seconds` | 838 s |
 | `data_transfer_bytes` (egress) | 474 864 B (≈ 0,45 MB) |
 
-### Medición tras las ejecuciones en GitHub Actions
+### Medición 1 · 2026-11-13 06:00 UTC, tras el primer run en GitHub Actions (cota superior)
 
-*Pendiente:* se calculará la diferencia contra la línea base después de 2-3 ejecuciones del
-workflow `pipeline-diario.yml`.
+Run 8 (`workflow_dispatch`): ventana 2018-01-29 → 2018-02-04, 138 tests OK, 73 s de
+pipeline (2 min 40 s el workflow completo, incluida la publicación de dbt docs).
+
+| Métrica | Línea base | Medición | Diferencia |
+|---|---:|---:|---:|
+| `active_time_seconds` | 3 100 | 4 268 | +1 168 s (19,5 min) |
+| `compute_time_seconds` | 838 | 1 142 | +304 s |
+| `data_transfer_bytes` | 474 864 | 537 206 | +62 342 B (≈ 61 KB) |
+
+**Salvedad:** la diferencia incluye, además del run 8, pruebas locales contra la misma base
+(pytest con tests de integración a las 05:43 UTC) y la consulta de esta medición. Es una
+**cota superior** del costo de un run, no el costo exacto.
+
+`compute_time_seconds` coincide aproximadamente con el tiempo activo × 0,25 CU
+(1 168 s × 0,25 ≈ 292), así que se interpreta como CU-segundos: **≈ 0,08 CU-h** en este
+intervalo. Aunque cada run diario costara eso, 31 runs al mes serían unas 2,6 CU-h, alrededor
+del **2,6 % de las 100 CU-h** del plan gratuito. El egress del pipeline es mínimo (≈ 61 KB),
+porque las transformaciones corren dentro de la base.
+
+### Medición 2 · run programado (cron 07:00 Lima)
+
+*Pendiente:* medición aislada de un run del cron sin otra actividad en la base.
 
 Referencia medida en local: un run diario completo (extract + load + `dbt build` con 134
 tests) dura **unos 55 s**. Con la suspensión a los 5 minutos, cada run mantiene el cómputo
