@@ -73,16 +73,16 @@ jobs:
           DIAS: ${{ inputs.dias }}
         run: |
           set -o pipefail
-          ARGS=""
+          ARGS=()
           if [ -n "$DIAS" ]; then
             # Validación: solo enteros positivos (evita inyectar argumentos)
             if ! [[ "$DIAS" =~ ^[1-9][0-9]{0,3}$ ]]; then
               echo "::error::El parámetro 'dias' debe ser un entero entre 1 y 9999"
               exit 1
             fi
-            ARGS="--dias $DIAS"
+            ARGS=(--dias "$DIAS")
           fi
-          python -m etl.main $ARGS 2>&1 | tee pipeline.log
+          python -m etl.main "${ARGS[@]}" 2>&1 | tee pipeline.log
 
       - name: Resumen del run
         if: always()
