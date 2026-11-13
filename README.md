@@ -150,6 +150,25 @@ seed `categorias_es`, el run terminó `fallido` con código de salida 1 y el wat
 en 2018-01-21. Tras eliminar el dato, el **run 7** reprocesó la misma ventana
 (2018-01-22 → 2018-01-28) con 134 tests OK y 0 fallidos.
 
+### Evidencia: alerta automática en GitHub Actions
+
+En el **run 9** (`origen = 'prueba_calidad'`, ejecutado en GitHub Actions) se inyectó de nuevo
+un producto con una categoría sin traducción, esta vez para probar la alerta:
+
+1. `dbt build` falló en el test de relación con el seed: 1 test fallido de 133.
+2. El workflow terminó en rojo y el job de documentación no se ejecutó.
+3. Se abrió automáticamente el **Issue #1** con la etiqueta `pipeline-fallido`, el enlace al
+   run y las líneas de error. Se verificó que el cuerpo no contiene credenciales,
+   comparándolo con los valores reales de los secrets.
+4. El watermark se quedó en 2018-02-04.
+
+Después se eliminó el dato, la misma ventana (2018-02-05 → 2018-02-11) se reprocesó con éxito
+y el Issue se cerró.
+
+| Workflow fallido (run 9) | Issue abierto automáticamente |
+|---|---|
+| ![Workflow fallido en GitHub Actions](docs/img/workflow_fallido_run9.png) | ![Issue abierto automáticamente por el pipeline](docs/img/issue_pipeline_fallido.png) |
+
 ### Evidencia de idempotencia
 
 Para comprobar que reprocesar un lote no duplica datos, se retrocedió el watermark a

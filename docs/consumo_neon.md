@@ -86,9 +86,27 @@ intervalo. Aunque cada run diario costara eso, 31 runs al mes serían unas 2,6 C
 del **2,6 % de las 100 CU-h** del plan gratuito. El egress del pipeline es mínimo (≈ 61 KB),
 porque las transformaciones corren dentro de la base.
 
-### Medición 2 · run programado (cron 07:00 Lima)
+### Conclusión (punto cerrado)
 
-*Pendiente:* medición aislada de un run del cron sin otra actividad en la base.
+Se adopta la **cota superior** como estimación de consumo del proyecto; no se hará una
+medición aislada por run.
+
+| Recurso | Estimación mensual (31 runs) | Límite gratuito | Uso |
+|---|---:|---:|---:|
+| Cómputo | ≤ 2,6 CU-h | 100 CU-h | ≤ 2,6 % |
+| Almacenamiento (dataset completo, proyección) | ≈ 260 MB | 1 GB | ≈ 26 % |
+| Egress del pipeline | < 2 MB | 5 GB | < 0,1 % |
+
+Para una medición aislada habría que tener en cuenta dos cosas:
+- Los contadores de la API (`active_time_seconds`, `compute_time_seconds`) se actualizan con
+  retraso: una lectura tomada minutos después de un run todavía no lo incluye.
+- La API de consumo por hora (`/consumption_history`) no está disponible en el plan gratuito.
+
+El historial de operaciones (`neon api /projects/<id>/operations`) sí permite comprobar cuándo
+se encendió y suspendió el cómputo. Por ejemplo, el run 8 lo mantuvo activo de 05:48:51 a
+05:56:00 UTC, unos 7 minutos (≈ 0,03 CU-h a 0,25 CU).
+
+El refresco manual de Power BI se sumará a estos valores (se estimará en la fase 5).
 
 Referencia medida en local: un run diario completo (extract + load + `dbt build` con 134
 tests) dura **unos 55 s**. Con la suspensión a los 5 minutos, cada run mantiene el cómputo
