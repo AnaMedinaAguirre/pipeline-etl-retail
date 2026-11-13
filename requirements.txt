@@ -6,5 +6,5 @@ python-dotenv>=1.0,<2
 kaggle>=1.6.17
 
 # Transformación y tests de datos
-dbt-core>=1.9,<1.11
-dbt-postgres>=1.9,<1.11
+dbt-core>=1.11,<1.13
+dbt-postgres>=1.11,<1.12

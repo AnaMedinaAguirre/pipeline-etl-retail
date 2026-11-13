@@ -1,0 +1,39 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Datos tal cual llegan (cargados por el pipeline de Python). Todas las columnas de negocio son texto."
+    schema: raw
+    tables:
+      - name: olist_orders
+        description: "Pedidos de Olist (1 fila por pedido)."
+        columns:
+          - name: order_id
+            data_tests: [unique, not_null]
+      - name: olist_order_items
+        description: "Ítems de cada pedido."
+      - name: olist_order_payments
+        description: "Pagos de cada pedido (un pedido puede tener varios)."
+      - name: olist_order_reviews
+        description: "Reseñas. Olist trae review_id repetidos entre pedidos y pedidos con más de una reseña."
+      - name: olist_customers
+        description: "Clientes por pedido (customer_id cambia en cada pedido; customer_unique_id identifica a la persona)."
+        columns:
+          - name: customer_id
+            data_tests: [unique, not_null]
+      - name: olist_products
+        description: "Productos (columnas con erratas de origen: product_name_lenght, product_description_lenght)."
+        columns:
+          - name: product_id
+            data_tests: [unique, not_null]
+      - name: olist_sellers
+        description: "Vendedores."
+        columns:
+          - name: seller_id
+            data_tests: [unique, not_null]
+      - name: olist_category_translation
+        description: "Traducción PT→EN de categorías publicada por Olist (se reemplaza por el seed categorias_es)."
+      - name: tipo_cambio_diario
+        description: "Tipos de cambio diarios: BCB SGS 1 (BRL por USD) y BCRP PD04640PD (PEN por USD)."
+      - name: tipo_cambio_mensual
+        description: "BCRP PN01225XM: BRL por USD, promedio mensual (validación)."

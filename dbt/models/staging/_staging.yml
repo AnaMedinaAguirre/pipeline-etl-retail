@@ -1,0 +1,174 @@
+version: 2
+
+models:
+  - name: stg_olist__orders
+    description: "Pedidos tipados."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist__customers')
+                field: customer_id
+      - name: order_status
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('estados_pedido')
+                field: order_status
+      - name: fecha_compra
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: "'2016-01-01'::date"
+                max_value: "'2018-12-31'::date"
+      - name: fecha_entrega_estimada
+        data_tests: [not_null]
+
+  - name: stg_olist__order_items
+    description: "Ítems de pedido con montos en BRL."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_id, order_item_id]
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist__orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist__products')
+                field: product_id
+      - name: seller_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist__sellers')
+                field: seller_id
+      - name: precio_brl
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: flete_brl
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+  - name: stg_olist__order_payments
+    description: "Pagos con montos en BRL."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_id, secuencia_pago]
+    columns:
+      - name: payment_type
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('tipos_pago')
+                field: payment_type
+      - name: monto_brl
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cuotas
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 24
+
+  - name: stg_olist__order_reviews
+    description: "Reseñas sin duplicados exactos (clave review_id + order_id)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [review_id, order_id]
+    columns:
+      - name: nota
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
+
+  - name: stg_olist__customers
+    description: "Clientes por pedido con ciudad estandarizada."
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: customer_unique_id
+        data_tests: [not_null]
+      - name: uf
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('estados_brasil')
+                field: uf
+
+  - name: stg_olist__products
+    description: "Productos tipados con categoría normalizada."
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: categoria_pt
+        description: "Si esta prueba falla, hay una categoría nueva sin traducción en el seed categorias_es."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('categorias_es')
+                field: categoria_pt
+
+  - name: stg_olist__sellers
+    description: "Vendedores con ciudad estandarizada."
+    columns:
+      - name: seller_id
+        data_tests: [unique, not_null]
+      - name: uf
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('estados_brasil')
+                field: uf
+
+  - name: stg_fx__diario
+    description: "Tipos de cambio diarios ('n.d.' -> NULL)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [serie, fecha]
+    columns:
+      - name: valor
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+
+  - name: stg_fx__mensual
+    description: "Promedio mensual BRL por USD (BCRP), para validar la PTAX diaria."

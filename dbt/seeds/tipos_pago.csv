@@ -1,0 +1,6 @@
+payment_type,tipo_pago_es
+credit_card,Tarjeta de crédito
+debit_card,Tarjeta de débito
+boleto,Boleto bancario
+voucher,Vale (voucher)
+not_defined,No definido

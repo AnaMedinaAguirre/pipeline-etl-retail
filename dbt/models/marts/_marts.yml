@@ -1,0 +1,188 @@
+version: 2
+
+models:
+  # ------------------------------------------------------------ dimensiones
+  - name: dim_fecha
+    description: "Calendario 2016-2018 con nombres en español."
+    columns:
+      - name: fecha_key
+        description: "Clave AAAAMMDD."
+        data_tests: [unique, not_null]
+      - name: fecha
+        data_tests: [unique, not_null]
+
+  - name: dim_tipo_cambio
+    description: "Tipo de cambio diario (BRL, USD, PEN). En Power BI se relaciona solo con fact_ventas."
+    columns:
+      - name: fecha_key
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_fecha'), field: fecha_key}
+      - name: es_imputado
+        description: "true si alguna de las dos tasas se rellenó con el último valor publicado (fin de semana/feriado)."
+
+  - name: dim_cliente
+    description: "Una fila por cliente real (customer_unique_id)."
+    columns:
+      - name: cliente_key
+        data_tests: [unique, not_null]
+      - name: customer_unique_id
+        data_tests: [unique, not_null]
+      - name: region
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Norte, Nordeste, Centro-Oeste, Sudeste, Sur]
+
+  - name: dim_producto
+    description: "Productos con categoría en PT/EN/ES y grupo."
+    columns:
+      - name: producto_key
+        data_tests: [unique, not_null]
+      - name: categoria_es
+        description: "Nulo solo si falta la traducción (lo detecta el test de stg_olist__products)."
+        data_tests: [not_null]
+      - name: grupo_categoria
+        data_tests: [not_null]
+
+  - name: dim_vendedor
+    description: "Vendedores con UF, estado y región."
+    columns:
+      - name: vendedor_key
+        data_tests: [unique, not_null]
+      - name: region
+        data_tests: [not_null]
+
+  - name: dim_tipo_pago
+    description: "Medios de pago en español."
+    columns:
+      - name: tipo_pago_key
+        data_tests: [unique, not_null]
+
+  - name: dim_estado_pedido
+    description: "Dimensión basura: estado del pedido x situación de entrega x reseña (64 combinaciones)."
+    columns:
+      - name: estado_pedido_key
+        data_tests: [unique, not_null]
+
+  # ------------------------------------------------------------ hechos
+  - name: fact_ventas
+    description: "Grano: ítem de pedido. Montos en BRL y equivalentes en USD y PEN al tipo de cambio del día de compra."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_id, order_item_id]
+    columns:
+      - name: fecha_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_fecha'), field: fecha_key}
+          - relationships:
+              arguments: {to: ref('dim_tipo_cambio'), field: fecha_key}
+      - name: cliente_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_cliente'), field: cliente_key}
+      - name: producto_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_producto'), field: producto_key}
+      - name: vendedor_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_vendedor'), field: vendedor_key}
+      - name: estado_pedido_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_estado_pedido'), field: estado_pedido_key}
+      - name: total_brl
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: false}
+      - name: total_usd
+        description: "Nulo indicaría una fecha sin tipo de cambio: debe ser imposible."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: false}
+      - name: total_pen
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: false}
+
+  - name: fact_pedidos
+    description: "Grano: pedido. Entregas (real vs estimado), reseñas y totales."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: fecha_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_fecha'), field: fecha_key}
+      - name: cliente_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_cliente'), field: cliente_key}
+      - name: estado_pedido_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_estado_pedido'), field: estado_pedido_key}
+      - name: nota_resena
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1, max_value: 5}
+      - name: valor_total_brl
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0}
+      - name: valor_total_usd
+        data_tests: [not_null]
+
+  - name: fact_pagos
+    description: "Grano: pago de un pedido. Conectado a dimensiones, no a fact_pedidos."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_id, secuencia_pago]
+    columns:
+      - name: fecha_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_fecha'), field: fecha_key}
+      - name: cliente_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_cliente'), field: cliente_key}
+      - name: tipo_pago_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_tipo_pago'), field: tipo_pago_key}
+      - name: estado_pedido_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_estado_pedido'), field: estado_pedido_key}
+      - name: monto_brl
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0}
+      - name: monto_usd
+        data_tests: [not_null]

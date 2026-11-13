@@ -6,7 +6,7 @@ Pasos de cada ejecución:
   3. Calcular la ventana del simulador a partir del watermark.
   4. Extract tipos de cambio (BCB y BCRP) para la ventana.
   5. Load raw: Olist + tipos de cambio en UNA transacción (idempotente).
-  6. [Fase 3] Transform + tests con dbt.
+  6. Transform + tests de calidad con `dbt build`. Si un test falla, el run falla.
   7. Avanzar el watermark (solo si todo lo anterior terminó bien) y cerrar el run.
 
 Uso:
@@ -24,6 +24,7 @@ from datetime import timedelta
 from etl import audit, extract_fx, extract_olist, load_raw
 from etl.config import cargar_config
 from etl.db import conectar
+from etl.dbt_cli import ResultadoDbt, ejecutar_dbt
 from etl.logging_config import configurar_logging
 from etl.simulador import Ventana, calcular_ventana, extraer_lote, rango_de_datos
 
@@ -33,6 +34,17 @@ log = logging.getLogger("etl.main")
 # el primer día de la ventana tenga una tasa previa con la cual rellenar si cae
 # en fin de semana o feriado.
 DIAS_PREVIOS_FX = 15
+
+
+class DbtFallido(RuntimeError):
+    """dbt build terminó con modelos o tests fallidos."""
+
+    def __init__(self, resumen: ResultadoDbt):
+        self.resumen = resumen
+        super().__init__(
+            f"dbt build falló: {resumen.tests_fallidos} test(s) fallido(s), "
+            f"{resumen.modelos_error} modelo(s) con error"
+        )
 
 
 class Paso:
@@ -124,18 +136,38 @@ def ejecutar(dias_override: int | None = None, dry_run: bool = False) -> int:
                 conteos["raw.tipo_cambio_mensual"] = (len(fx["mensual"]), n_mensual)
                 audit.registrar_tablas(conn_audit, run_id, conteos)
 
-            # Fase 3: aquí se ejecutará `dbt build` (transformaciones + tests).
-            # Si falla, se lanza una excepción y el watermark NO avanza.
+            with Paso("Transform + tests de calidad (dbt build)"):
+                dbt = ejecutar_dbt(["build"])
+                log.info(
+                    "dbt: tests OK=%d, advertencias=%d, fallidos=%d | modelos OK=%d, con error=%d",
+                    dbt.tests_ok,
+                    dbt.tests_advertencia,
+                    dbt.tests_fallidos,
+                    dbt.modelos_ok,
+                    dbt.modelos_error,
+                )
+                if not dbt.exito:
+                    # El watermark NO avanza: el próximo run reprocesa esta misma ventana
+                    raise DbtFallido(dbt)
 
             with Paso("Avanzar watermark"):
                 audit.actualizar_watermark(conn_audit, ventana.hasta, run_id)
 
-            audit.finalizar_run(conn_audit, run_id, "exito", ventana.desde, ventana.hasta)
+            audit.finalizar_run(
+                conn_audit,
+                run_id,
+                "exito",
+                ventana.desde,
+                ventana.hasta,
+                tests_ok=dbt.tests_ok + dbt.tests_advertencia,
+                tests_fallidos=dbt.tests_fallidos,
+            )
             return 0
 
         except Exception as exc:
             mensaje = audit.sanitizar_error(f"{type(exc).__name__}: {exc}")
             log.error("Pipeline fallido: %s", mensaje)
+            resumen = exc.resumen if isinstance(exc, DbtFallido) else None
             audit.finalizar_run(
                 conn_audit,
                 run_id,
@@ -143,6 +175,8 @@ def ejecutar(dias_override: int | None = None, dry_run: bool = False) -> int:
                 ventana.desde if ventana else None,
                 ventana.hasta if ventana else None,
                 error=mensaje,
+                tests_ok=(resumen.tests_ok + resumen.tests_advertencia) if resumen else None,
+                tests_fallidos=resumen.tests_fallidos if resumen else None,
             )
             return 1
 

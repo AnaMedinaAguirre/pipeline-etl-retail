@@ -1,0 +1,17 @@
+# Perfil de conexión de dbt. NO contiene secretos: todo se lee de variables de
+# entorno, que el wrapper `python -m etl.dbt_cli` arma a partir de DATABASE_URL.
+retail:
+  target: neon
+  outputs:
+    neon:
+      type: postgres
+      host: "{{ env_var('DBT_HOST') }}"
+      port: "{{ env_var('DBT_PORT', '5432') | int }}"
+      user: "{{ env_var('DBT_USER') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_DBNAME') }}"
+      schema: marts
+      threads: 4
+      sslmode: require
+      connect_timeout: 30
+      retries: 2

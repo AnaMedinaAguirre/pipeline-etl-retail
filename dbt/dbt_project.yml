@@ -1,0 +1,61 @@
+name: retail_olist
+version: "1.0.0"
+config-version: 2
+profile: retail
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Calendario de dim_fecha (cubre todo el periodo de Olist)
+  fecha_inicio_calendario: "2016-01-01"
+  fecha_fin_calendario: "2018-12-31"
+  # Diferencia máxima aceptada entre el promedio mensual de la PTAX diaria (BCB)
+  # y el promedio mensual publicado por el BCRP (PN01225XM)
+  tolerancia_validacion_fx: 0.02
+
+models:
+  retail_olist:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+
+seeds:
+  retail_olist:
+    +schema: referencia
+    +quote_columns: false
+    categorias_es:
+      +column_types:
+        categoria_pt: text
+        categoria_en: text
+        categoria_es: text
+        grupo: text
+    estados_brasil:
+      +column_types:
+        uf: text
+        nombre_estado: text
+        nombre_es: text
+        region: text
+    tipos_pago:
+      +column_types:
+        payment_type: text
+        tipo_pago_es: text
+    estados_pedido:
+      +column_types:
+        order_status: text
+        estado_pedido_es: text
+        orden: integer
+
+tests:
+  retail_olist:
+    +severity: error

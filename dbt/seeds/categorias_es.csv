@@ -1,0 +1,75 @@
+categoria_pt,categoria_en,categoria_es,grupo
+beleza_saude,health_beauty,Belleza y salud,Salud y belleza
+perfumaria,perfumery,Perfumería,Salud y belleza
+informatica_acessorios,computers_accessories,Informática y accesorios,Tecnología
+telefonia,telephony,Telefonía,Tecnología
+telefonia_fixa,fixed_telephony,Telefonía fija,Tecnología
+tablets_impressao_imagem,tablets_printing_image,"Tablets, impresión e imagen",Tecnología
+consoles_games,consoles_games,Consolas y videojuegos,Tecnología
+audio,audio,Audio,Tecnología
+eletronicos,electronics,Electrónica,Tecnología
+pcs,computers,Computadoras,Tecnología
+pc_gamer,gaming_pc,PC gamer,Tecnología
+cine_foto,cine_photo,Cine y fotografía,Tecnología
+eletrodomesticos,home_appliances,Electrodomésticos,Electrodomésticos
+eletrodomesticos_2,home_appliances,Electrodomésticos,Electrodomésticos
+eletroportateis,small_appliances,Pequeños electrodomésticos,Electrodomésticos
+portateis_casa_forno_e_cafe,small_appliances_home_oven_and_coffee,Hornos y cafeteras,Electrodomésticos
+portateis_cozinha_e_preparadores_de_alimentos,small_kitchen_appliances_and_food_processors,Electrodomésticos de cocina y preparación de alimentos,Electrodomésticos
+climatizacao,air_conditioning,Climatización,Electrodomésticos
+cama_mesa_banho,bed_bath_table,"Cama, mesa y baño",Hogar y muebles
+moveis_decoracao,furniture_decor,Muebles y decoración,Hogar y muebles
+utilidades_domesticas,housewares,Artículos para el hogar,Hogar y muebles
+moveis_cozinha_area_de_servico_jantar_e_jardim,kitchen_dining_laundry_garden_furniture,"Muebles de cocina, lavandería, comedor y jardín",Hogar y muebles
+moveis_escritorio,office_furniture,Muebles de oficina,Hogar y muebles
+moveis_colchao_e_estofado,furniture_mattress_and_upholstery,Colchones y tapicería,Hogar y muebles
+moveis_sala,furniture_living_room,Muebles de sala,Hogar y muebles
+moveis_quarto,furniture_bedroom,Muebles de dormitorio,Hogar y muebles
+casa_conforto,home_comfort,Confort para el hogar,Hogar y muebles
+casa_conforto_2,home_comfort,Confort para el hogar,Hogar y muebles
+la_cuisine,la_cuisine,Cocina gourmet (La Cuisine),Hogar y muebles
+casa_construcao,home_construction,Construcción y mejoras del hogar,Construcción y herramientas
+ferramentas_jardim,garden_tools,Herramientas de jardín,Construcción y herramientas
+construcao_ferramentas_construcao,construction_tools_construction,Herramientas de construcción,Construcción y herramientas
+construcao_ferramentas_jardim,construction_tools_garden,Construcción: jardín,Construcción y herramientas
+construcao_ferramentas_ferramentas,construction_tools_tools,Herramientas,Construcción y herramientas
+construcao_ferramentas_iluminacao,construction_tools_lights,Iluminación,Construcción y herramientas
+construcao_ferramentas_seguranca,construction_tools_safety,Seguridad para construcción,Construcción y herramientas
+fashion_bolsas_e_acessorios,fashion_bags_accessories,Bolsos y accesorios,Moda y accesorios
+fashion_calcados,fashion_shoes,Calzado,Moda y accesorios
+fashion_roupa_masculina,fashion_male_clothing,Ropa de hombre,Moda y accesorios
+fashion_roupa_feminina,fashion_female_clothing,Ropa de mujer,Moda y accesorios
+fashion_roupa_infanto_juvenil,fashion_childrens_clothes,Ropa infantil y juvenil,Moda y accesorios
+fashion_underwear_e_moda_praia,fashion_underwear_beach,Ropa interior y de playa,Moda y accesorios
+fashion_esporte,fashion_sport,Ropa deportiva,Moda y accesorios
+relogios_presentes,watches_gifts,Relojes y regalos,Moda y accesorios
+malas_acessorios,luggage_accessories,Maletas y accesorios de viaje,Moda y accesorios
+esporte_lazer,sports_leisure,Deportes y ocio,Deportes y ocio
+bebes,baby,Bebés,Bebés y niños
+brinquedos,toys,Juguetes,Bebés y niños
+fraldas_higiene,diapers_and_hygiene,Pañales e higiene,Bebés y niños
+alimentos_bebidas,food_drink,Alimentos y bebidas,Alimentos y bebidas
+alimentos,food,Alimentos,Alimentos y bebidas
+bebidas,drinks,Bebidas,Alimentos y bebidas
+papelaria,stationery,Papelería,Libros y papelería
+livros_tecnicos,books_technical,Libros técnicos,Libros y papelería
+livros_interesse_geral,books_general_interest,Libros de interés general,Libros y papelería
+livros_importados,books_imported,Libros importados,Libros y papelería
+instrumentos_musicais,musical_instruments,Instrumentos musicales,Música y entretenimiento
+musica,music,Música,Música y entretenimiento
+cds_dvds_musicais,music_cds_dvds,CDs y DVDs musicales,Música y entretenimiento
+dvds_blu_ray,dvds_blu_ray,DVDs y Blu-ray,Música y entretenimiento
+artes,art,Arte,Arte y manualidades
+artes_e_artesanato,arts_and_craftsmanship,Artes y manualidades,Arte y manualidades
+artigos_de_festas,party_supplies,Artículos para fiestas,Regalos y fiestas
+artigos_de_natal,christmas_supplies,Artículos navideños,Regalos y fiestas
+flores,flowers,Flores,Regalos y fiestas
+cool_stuff,cool_stuff,Artículos novedosos,Regalos y fiestas
+agro_industria_e_comercio,agro_industry_and_commerce,Agroindustria y comercio,Industria y comercio
+industria_comercio_e_negocios,industry_commerce_and_business,"Industria, comercio y negocios",Industria y comercio
+sinalizacao_e_seguranca,signaling_and_security,Señalización y seguridad,Industria y comercio
+automotivo,auto,Automotriz,Automotriz
+pet_shop,pet_shop,Mascotas,Mascotas
+market_place,market_place,Marketplace (varios),Otros
+seguros_e_servicos,insurance_and_services,Seguros y servicios,Otros
+sin_categoria,no_category,Sin categoría,Sin categoría

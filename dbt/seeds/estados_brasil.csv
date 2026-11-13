@@ -1,0 +1,28 @@
+uf,nombre_estado,nombre_es,region
+AC,Acre,Acre,Norte
+AL,Alagoas,Alagoas,Nordeste
+AM,Amazonas,Amazonas,Norte
+AP,Amapá,Amapá,Norte
+BA,Bahia,Bahía,Nordeste
+CE,Ceará,Ceará,Nordeste
+DF,Distrito Federal,Distrito Federal,Centro-Oeste
+ES,Espírito Santo,Espírito Santo,Sudeste
+GO,Goiás,Goiás,Centro-Oeste
+MA,Maranhão,Maranhão,Nordeste
+MG,Minas Gerais,Minas Gerais,Sudeste
+MS,Mato Grosso do Sul,Mato Grosso del Sur,Centro-Oeste
+MT,Mato Grosso,Mato Grosso,Centro-Oeste
+PA,Pará,Pará,Norte
+PB,Paraíba,Paraíba,Nordeste
+PE,Pernambuco,Pernambuco,Nordeste
+PI,Piauí,Piauí,Nordeste
+PR,Paraná,Paraná,Sur
+RJ,Rio de Janeiro,Río de Janeiro,Sudeste
+RN,Rio Grande do Norte,Río Grande del Norte,Nordeste
+RO,Rondônia,Rondônia,Norte
+RR,Roraima,Roraima,Norte
+RS,Rio Grande do Sul,Río Grande del Sur,Sur
+SC,Santa Catarina,Santa Catarina,Sur
+SE,Sergipe,Sergipe,Nordeste
+SP,São Paulo,São Paulo,Sudeste
+TO,Tocantins,Tocantins,Norte

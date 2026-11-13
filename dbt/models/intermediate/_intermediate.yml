@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: int_tipo_cambio_diario
+    description: >
+      Tipo de cambio para todos los días calendario. Fines de semana y feriados se
+      rellenan con el último valor publicado de cada serie (es_imputado = true).
+    columns:
+      - name: fecha
+        data_tests: [unique, not_null]
+      - name: usd_brl
+        description: "BRL por 1 USD (BCB PTAX venta)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1, max_value: 10}
+      - name: pen_usd
+        description: "PEN por 1 USD (BCRP PD04640PD)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1, max_value: 10}
+      - name: pen_brl
+        description: "PEN por 1 BRL (cruce vía USD)."
+        data_tests: [not_null]
+
+  - name: int_pedidos
+    description: "Un registro por pedido con métricas de entrega, reseña y totales en BRL."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: situacion_entrega
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [a_tiempo, con_atraso, sin_fecha_entrega, no_entregado]
+      - name: dias_entrega_real
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, max_value: 365}
+      - name: nota_resena
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1, max_value: 5}
+      - name: monto_pagado_brl
+        description: >
+          Total pagado. En ~0,3 % de los pedidos difiere de productos + flete en más de
+          1 BRL (intereses de cuotas, vouchers); se reporta como advertencia.

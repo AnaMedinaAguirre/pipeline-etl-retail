@@ -1,0 +1,9 @@
+order_status,estado_pedido_es,orden
+created,Creado,1
+approved,Aprobado,2
+processing,En proceso,3
+invoiced,Facturado,4
+shipped,Enviado,5
+delivered,Entregado,6
+canceled,Cancelado,7
+unavailable,No disponible,8
