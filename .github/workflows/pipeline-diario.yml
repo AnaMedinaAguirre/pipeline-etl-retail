@@ -1,0 +1,204 @@
+name: Pipeline diario
+
+on:
+  schedule:
+    # 12:00 UTC = 07:00 en Lima (UTC-5, sin horario de verano).
+    # GitHub puede retrasar la ejecución algunos minutos en horas de alta demanda.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: "Días de pedidos a cargar en este run (vacío = BATCH_DAYS)"
+        required: false
+        type: string
+        default: ""
+
+# Nunca dos ejecuciones a la vez: la segunda espera a que termine la primera
+concurrency:
+  group: pipeline-diario
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    name: Extract → Load → dbt build → etl_runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write # para abrir un Issue si falla
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      BATCH_DAYS: "7"
+      FECHA_CARGA_INICIAL: "2017-12-31"
+      LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: "1"
+      DO_NOT_TRACK: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Python 3.12 (con caché de pip)
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+
+      - name: Caché del dataset Olist (evita descargar el zip de Kaggle cada día)
+        uses: actions/cache@v6
+        with:
+          path: data/olist
+          key: olist-${{ hashFiles('src/etl/extract_olist.py') }}
+
+      - name: Caché de paquetes dbt
+        uses: actions/cache@v6
+        with:
+          path: dbt/dbt_packages
+          key: dbt-packages-${{ hashFiles('dbt/packages.yml', 'dbt/package-lock.yml') }}
+
+      - name: Ejecutar pipeline
+        env:
+          DIAS: ${{ inputs.dias }}
+        run: |
+          set -o pipefail
+          ARGS=""
+          if [ -n "$DIAS" ]; then
+            # Validación: solo enteros positivos (evita inyectar argumentos)
+            if ! [[ "$DIAS" =~ ^[1-9][0-9]{0,3}$ ]]; then
+              echo "::error::El parámetro 'dias' debe ser un entero entre 1 y 9999"
+              exit 1
+            fi
+            ARGS="--dias $DIAS"
+          fi
+          python -m etl.main $ARGS 2>&1 | tee pipeline.log
+
+      - name: Resumen del run
+        if: always()
+        continue-on-error: true
+        run: python -m etl.resumen_run >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Abrir Issue si el pipeline falla
+        if: failure()
+        uses: actions/github-script@v9
+        env:
+          # Se pasan solo para BORRARLOS del texto del Issue si apareciesen
+          SECRETO_DB: ${{ secrets.DATABASE_URL }}
+          SECRETO_KAGGLE: ${{ secrets.KAGGLE_KEY }}
+        with:
+          script: |
+            const fs = require('fs');
+            const urlRun = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // Solo las líneas de error del log (el pipeline ya las sanitiza)
+            let errores = '(no se encontró pipeline.log: el fallo ocurrió antes de ejecutar el pipeline)';
+            if (fs.existsSync('pipeline.log')) {
+              const lineas = fs.readFileSync('pipeline.log', 'utf8').split('\n')
+                .filter(l => /ERROR|FAIL|Error|Traceback|fallido/.test(l));
+              errores = lineas.slice(-25).join('\n') || '(sin líneas de error en el log)';
+            }
+
+            // Segunda capa de limpieza: cadenas de conexión, contraseñas y valores de secrets
+            const limpiar = (texto) => {
+              let t = texto
+                .replace(/postgres(ql)?:\/\/[^\s'"]+/gi, 'postgresql://***')
+                .replace(/(password\s*=\s*)\S+/gi, '$1***');
+              for (const s of [process.env.SECRETO_DB, process.env.SECRETO_KAGGLE]) {
+                if (s) t = t.split(s).join('***');
+              }
+              return t;
+            };
+
+            const cuerpo = limpiar([
+              `El **pipeline diario falló** (${context.eventName}).`,
+              '',
+              `- Run: ${urlRun}`,
+              `- Commit: \`${context.sha.substring(0, 7)}\``,
+              `- Fecha (UTC): ${new Date().toISOString()}`,
+              '',
+              'Líneas de error del log:',
+              '```',
+              errores,
+              '```',
+              '',
+              'El watermark **no avanzó**: la próxima ejecución reprocesará la misma ventana.',
+              'Revisa `audit.etl_runs` (columna `mensaje_error`) para más detalle.',
+            ].join('\n'));
+
+            // Si ya hay un Issue abierto por fallos, se comenta en él en vez de crear otro
+            const etiqueta = 'pipeline-fallido';
+            const abiertos = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: etiqueta, per_page: 1,
+            });
+            if (abiertos.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: abiertos.data[0].number, body: cuerpo,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: `Pipeline diario fallido (${new Date().toISOString().slice(0, 10)})`,
+                body: cuerpo, labels: [etiqueta],
+              });
+            }
+
+  docs:
+    name: Publicar dbt docs (linaje) en GitHub Pages
+    needs: pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DO_NOT_TRACK: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+
+      - name: Caché de paquetes dbt
+        uses: actions/cache@v6
+        with:
+          path: dbt/dbt_packages
+          key: dbt-packages-${{ hashFiles('dbt/packages.yml', 'dbt/package-lock.yml') }}
+
+      - name: Generar documentación (HTML estático)
+        run: |
+          python -m etl.dbt_cli docs generate --static
+          mkdir -p sitio
+          cp dbt/target/static_index.html sitio/index.html
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: sitio
+
+      - id: deploy
+        uses: actions/deploy-pages@v5

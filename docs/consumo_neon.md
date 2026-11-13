@@ -47,8 +47,28 @@ GROUP BY 1 ORDER BY sum(pg_total_relation_size(c.oid)) DESC;
 
 ## Cómputo y egress
 
-*Pendiente de medir en la fase 4*, con el workflow diario de GitHub Actions funcionando,
-desde el panel *Usage* de la consola de Neon.
+### Configuración del cómputo
+
+- Autoscaling limitado a **0,25 – 1 CU** (el valor por defecto era 0,25 – 2 CU). Se cambió el
+  2026-11-13 con `neon api … -X PATCH` para acotar el consumo; este volumen de datos no
+  necesita más de 1 CU.
+- Suspensión automática: la del plan gratuito (5 min sin actividad).
+
+### Línea base · 2026-11-13 05:15 UTC (antes de ejecutar en GitHub Actions)
+
+Valores del periodo de facturación actual (desde 2026-11-13T02:25Z), leídos con
+`neon api /projects/<id>`. Incluyen el desarrollo local de las fases 1-3 posteriores a esa hora.
+
+| Métrica (API de Neon) | Valor |
+|---|---:|
+| `active_time_seconds` (tiempo con el cómputo encendido) | 3 100 s |
+| `compute_time_seconds` | 838 s |
+| `data_transfer_bytes` (egress) | 474 864 B (≈ 0,45 MB) |
+
+### Medición tras las ejecuciones en GitHub Actions
+
+*Pendiente:* se calculará la diferencia contra la línea base después de 2-3 ejecuciones del
+workflow `pipeline-diario.yml`.
 
 Referencia medida en local: un run diario completo (extract + load + `dbt build` con 134
 tests) dura **unos 55 s**. Con la suspensión a los 5 minutos, cada run mantiene el cómputo

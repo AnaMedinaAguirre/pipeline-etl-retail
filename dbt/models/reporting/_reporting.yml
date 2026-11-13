@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: vw_conciliacion_ventas_pagos
+    description: >
+      Conciliación mensual entre ventas (precio + flete) y total pagado. La diferencia
+      se explica casi por completo por pagos de pedidos sin ítems (estado
+      unavailable/canceled) y, en menor medida, por intereses de pagos en cuotas.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              abs(total_pagado_brl - (ventas_brl + coalesce(pagado_pedidos_sin_items_brl, 0)
+              + diferencia_cuotas_brl + diferencia_redondeo_brl)) < 0.01
+    columns:
+      - name: anio_mes
+        data_tests: [unique, not_null]
+      - name: ventas_brl
+        description: "Precio + flete de los ítems (= fact_ventas.total_brl). Es la cifra de ventas del dashboard."
+      - name: total_pagado_brl
+        description: "Suma de pagos registrados (= fact_pagos.monto_brl). Incluye pagos de pedidos sin ítems."

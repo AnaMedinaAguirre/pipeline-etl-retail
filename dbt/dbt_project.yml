@@ -29,6 +29,10 @@ models:
     marts:
       +schema: marts
       +materialized: table
+    # Vistas de consumo para Power BI (único esquema visible para powerbi_lector)
+    reporting:
+      +schema: reporting
+      +materialized: view
 
 seeds:
   retail_olist:

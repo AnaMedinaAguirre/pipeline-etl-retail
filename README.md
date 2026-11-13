@@ -1,5 +1,11 @@
 # Pipeline ETL automatizado de ventas retail (Olist)
 
+[![Pipeline diario](https://github.com/AnaMedinaAguirre/pipeline-etl-retail/actions/workflows/pipeline-diario.yml/badge.svg)](https://github.com/AnaMedinaAguirre/pipeline-etl-retail/actions/workflows/pipeline-diario.yml)
+[![CI](https://github.com/AnaMedinaAguirre/pipeline-etl-retail/actions/workflows/ci.yml/badge.svg)](https://github.com/AnaMedinaAguirre/pipeline-etl-retail/actions/workflows/ci.yml)
+[![dbt docs](https://img.shields.io/badge/dbt%20docs-linaje-FF694B?logo=dbt&logoColor=white)](https://anamedinaaguirre.github.io/pipeline-etl-retail/)
+![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)
+
 > 🚧 Proyecto en construcción (fase 1: setup). La documentación completa, el diagrama de
 > arquitectura, el modelo estrella y los resultados se publicarán al terminar las fases.
 
@@ -41,6 +47,22 @@ ejecución carga hasta `FECHA_CARGA_INICIAL`; cada ejecución siguiente "recibe"
 idempotente (borrar por clave + insertar, en una sola transacción) y el watermark solo
 avanza si el run termina bien.
 
+## Automatización (GitHub Actions)
+
+| Workflow | Cuándo | Qué hace |
+|---|---|---|
+| [`pipeline-diario.yml`](.github/workflows/pipeline-diario.yml) | Todos los días a las **07:00 (Lima)** y manualmente (*Run workflow*, con el parámetro opcional `dias`) | extract → load raw → `dbt build` (modelos y tests) → `etl_runs`. Luego publica la documentación de dbt (linaje) en GitHub Pages. |
+| [`ci.yml`](.github/workflows/ci.yml) | En cada pull request y push a `main` | ruff (lint y formato), actionlint, pytest y `dbt parse` (sin conexión a la base). |
+
+- **Secrets requeridos:** `DATABASE_URL` (conexión directa a Neon), `KAGGLE_USERNAME` y `KAGGLE_KEY`.
+- **Concurrencia:** nunca corren dos ejecuciones del pipeline a la vez.
+- **Caché:** dependencias de pip, el dataset de Olist (no se descarga de Kaggle cada día) y los paquetes de dbt.
+- **Si el pipeline falla:**
+  1. El job termina en rojo y GitHub envía un correo.
+  2. Se abre automáticamente un **Issue** con la etiqueta `pipeline-fallido`, el enlace al run y las líneas de error, con las credenciales eliminadas. Si ya hay un Issue abierto, se agrega un comentario en él.
+  3. El watermark no avanza.
+- **Resumen:** cada ejecución publica un resumen (ventana, tests y filas por tabla) en la página del run.
+
 ## Transformación y calidad de datos (dbt)
 
 ```powershell
@@ -59,7 +81,7 @@ no contiene secretos.
 | marts | `marts` | tablas (hechos incrementales) | `fact_ventas`, `fact_pedidos`, `fact_pagos`, `dim_fecha`, `dim_cliente`, `dim_producto`, `dim_vendedor`, `dim_tipo_pago`, `dim_estado_pedido`, `dim_tipo_cambio` |
 | seeds | `referencia` | tablas | categorías PT/EN/ES con grupo, estados de Brasil y región, medios de pago, estados de pedido |
 
-**Tests de calidad (134):** claves únicas y no nulas, relaciones entre hechos y dimensiones,
+**Tests de calidad (138):** claves únicas y no nulas, relaciones entre hechos y dimensiones,
 rangos de montos, fechas y notas, categorías traducidas, reconciliación de `fact_ventas` con
 staging y validación cruzada de la PTAX diaria (BCB) contra el promedio mensual del BCRP.
 **Si un test falla, `dbt build` falla, el run queda `fallido` y el watermark no avanza.** El
@@ -92,6 +114,33 @@ Los vouchers no explican ninguna diferencia en este periodo. El dataset no docum
 así que se trata como una **característica de los datos y no como un error**: el test
 `warn_pago_difiere_de_items` la monitorea como advertencia, y los ingresos del modelo se
 calculan con precio + flete (`fact_ventas`), no con el monto pagado.
+
+### "Ventas" frente a "total pagado"
+
+En el modelo hay dos cifras de dinero distintas, y el dashboard las presenta por separado:
+
+| Concepto | Definición | Fuente |
+|---|---|---|
+| **Ventas** | precio + flete de los ítems vendidos | `fact_ventas.total_brl` (= `fact_pedidos.valor_total_brl`) |
+| **Total pagado** | suma de los pagos registrados | `fact_pagos.monto_brl` (= `fact_pedidos.monto_pagado_brl`) |
+
+Conciliación con los pedidos cargados hasta el 2018-01-28
+(vista `reporting.vw_conciliacion_ventas_pagos`):
+
+| Componente | Pedidos | BRL |
+|---|---:|---:|
+| Ventas (precio + flete) | 51 353 | 8 198 003,88 |
+| + Pagos de pedidos **sin ítems** (504 `unavailable`, 75 `canceled`, 7 en otros estados) | 586 | 114 653,33 |
+| + Diferencias > 1 BRL en pedidos con ítems (cuotas, neto; incluye un pedido entregado sin pago registrado, −143,46) | 166 | 1 981,31 |
+| + Diferencias ≤ 1 BRL (redondeo) | | 2,97 |
+| **= Total pagado** | | **8 314 641,49** |
+
+El 98,3 % de la diferencia de 116 637,61 BRL corresponde a pagos de pedidos que nunca
+tuvieron ítems: Olist registra el pago aunque el pedido termine "no disponible" o
+"cancelado". Por eso los **ingresos** del dashboard se calculan con ventas y no con pagos.
+Dos tests lo vigilan en cada run: `assert_hechos_consistentes_entre_si` (los tres hechos
+cuadran entre sí) y el test de la vista de conciliación (la suma de componentes es
+igual al total pagado).
 
 ### Evidencia: un test fallido detiene el pipeline
 
