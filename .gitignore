@@ -1,0 +1,69 @@
+# ==========================================================
+# Secretos y credenciales (NUNCA se suben al repositorio)
+# ==========================================================
+.env
+.env.*
+!.env.example
+kaggle.json
+**/kaggle.json
+*.pem
+
+# ==========================================================
+# Datos descargados (licencia CC BY-NC-SA: no se redistribuyen)
+# ==========================================================
+data/
+*.zip
+*.csv
+!dbt/seeds/*.csv
+
+# ==========================================================
+# Python
+# ==========================================================
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==========================================================
+# dbt
+# ==========================================================
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+logs/
+*.log
+.user.yml
+
+# ==========================================================
+# Node (CLI de Neon instalado localmente, si aplica)
+# ==========================================================
+node_modules/
+
+# ==========================================================
+# Power BI (el .pbix puede contener datos importados)
+# ==========================================================
+*.pbix
+*.pbit.bak
+
+# ==========================================================
+# Editor / sistema operativo
+# ==========================================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+Thumbs.db
+.DS_Store
+desktop.ini
+.neon
+
+# ==========================================================
+# Herramientas locales del agente (skills/MCP de Neon por proyecto)
+# ==========================================================
+.claude/
+skills-lock.json
+.mcp.json

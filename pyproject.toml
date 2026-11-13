@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "pipeline-etl-retail"
+version = "0.1.0"
+description = "Pipeline ETL automatizado de ventas retail (Olist) con Python, dbt y PostgreSQL (Neon)"
+requires-python = ">=3.12,<3.13"
+
+# ----------------------------------------------------------
+# Ruff: linter y formateador
+# ----------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = ["dbt/dbt_packages", "dbt/target"]
+
+[tool.ruff.lint]
+# E/W: estilo, F: errores, I: orden de imports, B: bugs comunes, UP: sintaxis moderna
+select = ["E", "W", "F", "I", "B", "UP"]
+
+# ----------------------------------------------------------
+# Pytest
+# ----------------------------------------------------------
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,10 @@
+# Dependencias de ejecución del pipeline
+pandas>=2.2,<3
+psycopg[binary]>=3.2,<4
+requests>=2.32,<3
+python-dotenv>=1.0,<2
+kaggle>=1.6.17
+
+# Transformación y tests de datos
+dbt-core>=1.9,<1.11
+dbt-postgres>=1.9,<1.11
