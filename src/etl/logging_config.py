@@ -20,6 +20,11 @@ def configurar_logging(nivel: str | None = None) -> None:
         raiz.setLevel(nivel)
         return
 
+    # En Windows, si la salida se redirige (pipe/archivo), Python usa cp1252 y
+    # caracteres como "→" o "✔" rompen el log. Se fuerza UTF-8.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(logging.Formatter(_FORMATO, datefmt=_FORMATO_FECHA))
     raiz.addHandler(handler)

@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS audit.etl_runs (
     estado          text        NOT NULL DEFAULT 'en_curso'
                     CHECK (estado IN ('en_curso', 'exito', 'fallido', 'sin_datos')),
     origen          text        NOT NULL DEFAULT 'local'
-                    CHECK (origen IN ('schedule', 'manual', 'local')),
+                    CHECK (origen IN ('schedule', 'manual', 'local')),  -- ampliado en 005
     ventana_desde   date,
     ventana_hasta   date,
     tests_ok        integer,

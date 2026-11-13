@@ -30,3 +30,6 @@ select = ["E", "W", "F", "I", "B", "UP"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "integracion: usa la base de datos real (se omite si no hay DATABASE_URL)",
+]
